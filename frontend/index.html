@@ -2,16 +2,76 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Storie matrimonio</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Scopri la foto</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+     body {
+      background-color: #F7EAEC; /* sfondo rosa cipria */
+      margin: 0;
+    }
+    .contenitore {
+      background-color: #F7EAEC; 
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .titolo-principale {
+      font-family: 'Dancing Script', cursive; /* Tipo di carattere */
+      font-size: 44px;                        /* Dimensione del testo */
+      color: #FF4CAA;                         /* Colore del testo */
+      font-weight: bold;                      /* Grassetto */
+      text-align: center;                     /* Allineamento */
+      letter-spacing: 2px;                    /* Spaziatura lettere */
+      text-transform: uppercase;              /* Tutto maiuscolo */
+      margin-bottom: 30px;
+    }
+
+    img {
+      max-width: 40%;
+      height: auto;
+      display: block;
+      margin: 0 auto 20px auto;
+    }
+
+    @media (max-width: 600px) {
+        img {
+            max-width: 80%; /* su smartphone diventa più piccola */
+        }
+    }
+
+    .pulsante {
+      display: inline-block;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 18px;
+      text-decoration: none;
+      color: white;
+      background-color: #007BFF;
+      border-radius: 10px;
+      transition: background-color 0.3s;
+    }
+
+    .pulsante:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <h1>Le nostre foto</h1>
-  <div id="galleria"></div>
-  <form id="uploadForm">
-    <input type="file" name="foto" accept="image/*">
-    <button type="submit">Aggiungi foto</button>
-  </form>
-  <script src="script.js"></script>
+  <div class="contenitore">
+    <h1 class="titolo-principale">🎉 Diamo inizio alle danze!</h1>
+    <img src="immagini/savethedate.jpg" alt="foto nostra a san pietro">
+
+    <!-- Bottone per le vostre storie -->
+    <a href="storie.html" class="pulsante">Le nostre storie</a>
+
+    <!-- Bottone per upload invitati -->
+    <a href="upload.html" class="pulsante">Carica la tua foto</a>
+  </div>
 </body>
 </html>
