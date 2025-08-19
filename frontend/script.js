@@ -4,6 +4,6 @@ form.addEventListener('submit', async e => {
   const file = form.foto.files[0];
   const data = new FormData();
   data.append('foto', file);
-  await fetch('https://TUO_BACKEND_URL/upload', { method:'POST', body:data });
+  await fetch('https://20250819t170636-dot-matrimoniome.ew.r.appspot.com', { method:'POST', body:data });
   alert('Foto inviata!');
 });
