@@ -1,173 +1,75 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Carica Foto</title>
-  <style>
-    body {
-      background-color: #F7EAEC; 
-      min-height: 100vh;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      font-family: "Brush Script MT", cursive;
-      text-align: center;
+<input type="file" id="fileInput" multiple>
+<button class="btn" onclick="uploadFiles()">Carica</button>
+<div id="progressContainer"></div>
+
+<script>
+function uploadFiles() {
+  const input = document.getElementById('fileInput');
+  const container = document.getElementById('progressContainer');
+  container.innerHTML = ""; // pulisce le barre precedenti
+
+  const files = input.files;
+  if (files.length === 0) {
+    alert("Seleziona almeno una foto.");
+    return;
+  }
+
+  // crea le barre di progresso
+  const progressElements = [];
+  for (const file of files) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "progressWrapper";
+
+    const label = document.createElement("div");
+    label.className = "progressLabel";
+    label.textContent = "Caricamento: " + file.name;
+
+    const bar = document.createElement("div");
+    bar.className = "progressBar";
+
+    const progress = document.createElement("div");
+    bar.appendChild(progress);
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(bar);
+    container.appendChild(wrapper);
+
+    progressElements.push({file, progress, label});
+  }
+
+  // invio tutti i file in un unico POST
+  const formData = new FormData();
+  for (const f of files) {
+    formData.append("foto", f); // tutti i file con campo "foto"
+  }
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
+
+  xhr.upload.addEventListener("progress", (e) => {
+    if (e.lengthComputable) {
+      const percent = (e.loaded / e.total) * 100;
+      // aggiorna tutte le barre in proporzione
+      progressElements.forEach(pe => pe.progress.style.width = percent + "%");
     }
+  });
 
-    header, footer {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    header h1 {
-      margin: 0;
-      color: #FF4CAA;
-      font-size: 32px;
-    }
-
-    .btn {
-      background: black;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-
-    .btn:hover {
-      opacity: 0.8;
-    }
-
-    footer button {
-      background: none;
-      border: none;
-      font-size: 28px;
-      color: #FF4CAA;
-      cursor: pointer;
-    }
-
-    #progressContainer {
-      margin-top: 20px;
-      width: 80%;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .progressWrapper {
-      margin-bottom: 15px;
-      text-align: left;
-    }
-
-    .progressLabel {
-      font-size: 14px;
-      color: #FF4CAA;
-      margin-bottom: 5px;
-    }
-
-    .progressBar {
-      width: 100%;
-      height: 12px;
-      background: #ddd;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .progressBar div {
-      height: 100%;
-      width: 0;
-      background: #FF4CAA;
-      transition: width 0.3s;
-    }
-  </style>
-</head>
-<body>
-  <!-- Titolo -->
-  <header>
-    <h1>Carica Foto</h1>
-  </header>
-
-  <!-- Sezione upload -->
-  <main>
-    <input type="file" id="fileInput" multiple>
-    <button class="btn" onclick="uploadFiles()">Carica</button>
-    <div id="progressContainer"></div>
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <button onclick="window.location.href='gallery.html'">Galleria</button>
-  </footer>
-
-  <script>
-    function uploadFiles() {
-      const input = document.getElementById('fileInput');
-      const container = document.getElementById('progressContainer');
-      container.innerHTML = ""; // pulisce le barre precedenti
-
-      const files = input.files;
-      if (files.length === 0) {
-        alert("Seleziona almeno una foto.");
-        return;
-      }
-
-      for (const file of files) {
-        // wrapper progress bar
-        const wrapper = document.createElement("div");
-        wrapper.className = "progressWrapper";
-
-        const label = document.createElement("div");
-        label.className = "progressLabel";
-        label.textContent = "Caricamento: " + file.name;
-
-        const bar = document.createElement("div");
-        bar.className = "progressBar";
-
-        const progress = document.createElement("div");
-        bar.appendChild(progress);
-
-        wrapper.appendChild(label);
-        wrapper.appendChild(bar);
-        container.appendChild(wrapper);
-
-        uploadSingleFile(file, progress, label);
-      }
-    }
-
-    function uploadSingleFile(file, progressEl, labelEl) {
-      const xhr = new XMLHttpRequest();
-      const formData = new FormData();
-      formData.append("file", file);
-
-      xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
-
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const percent = (e.loaded / e.total) * 100;
-          progressEl.style.width = percent + "%";
-        }
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      const response = JSON.parse(xhr.responseText);
+      response.files.forEach(f => {
+        const pe = progressElements.find(p => p.file.name === f.filename);
+        if (pe) pe.label.textContent = "✅ Caricato: " + f.filename;
       });
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          labelEl.textContent = "✅ Caricato: " + file.name;
-        } else {
-          labelEl.textContent = "❌ Errore: " + file.name;
-        }
-      };
-
-      xhr.onerror = () => {
-        labelEl.textContent = "❌ Errore connessione: " + file.name;
-      };
-
-      xhr.send(formData);
+    } else {
+      progressElements.forEach(pe => pe.label.textContent = "❌ Errore: " + pe.file.name);
     }
-  </script>
-</body>
-</html>
+  };
+
+  xhr.onerror = () => {
+    progressElements.forEach(pe => pe.label.textContent = "❌ Errore connessione: " + pe.file.name);
+  };
+
+  xhr.send(formData);
+}
+</script>
