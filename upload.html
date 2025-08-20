@@ -2,6 +2,65 @@
 <button class="btn" onclick="uploadFiles()">Carica</button>
 <div id="progressContainer"></div>
 
+<style>
+  body {
+    background-color: #F7EAEC;
+    font-family: "Brush Script MT", cursive;
+    text-align: center;
+  }
+
+  .btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: opacity 0.3s;
+  }
+
+  .btn:hover {
+    opacity: 0.8;
+  }
+
+  #progressContainer {
+    margin-top: 20px;
+    width: 80%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .progressWrapper {
+    margin-bottom: 15px;
+    text-align: left;
+  }
+
+  .progressLabel {
+    font-size: 14px;
+    color: #FF4CAA;
+    margin-bottom: 5px;
+  }
+
+  .progressBar {
+    width: 100%;
+    height: 14px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .progressBar div {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #FF4CAA, #FF85D0);
+    transition: width 0.3s ease;
+  }
+</style>
+
 <script>
 function uploadFiles() {
   const input = document.getElementById('fileInput');
@@ -14,7 +73,6 @@ function uploadFiles() {
     return;
   }
 
-  // crea le barre di progresso
   const progressElements = [];
   for (const file of files) {
     const wrapper = document.createElement("div");
@@ -37,10 +95,9 @@ function uploadFiles() {
     progressElements.push({file, progress, label});
   }
 
-  // invio tutti i file in un unico POST
   const formData = new FormData();
   for (const f of files) {
-    formData.append("foto", f); // tutti i file con campo "foto"
+    formData.append("foto", f);
   }
 
   const xhr = new XMLHttpRequest();
@@ -49,7 +106,6 @@ function uploadFiles() {
   xhr.upload.addEventListener("progress", (e) => {
     if (e.lengthComputable) {
       const percent = (e.loaded / e.total) * 100;
-      // aggiorna tutte le barre in proporzione
       progressElements.forEach(pe => pe.progress.style.width = percent + "%");
     }
   });
