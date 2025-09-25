@@ -1,36 +1,80 @@
-<body>
-  <input type="file" id="fileInput" multiple>
-  <button class="btn" onclick="uploadFiles()">Carica</button>
-  <div id="progressContainer"></div>
-  <a href="gallery.html" class="pulsante">Galleria</a>
-</body>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carica le tue foto</title>
 <style>
   body {
     background-color: #F7EAEC;
-    font-family: "Brush Script MT", cursive;
+    font-family: "Dancing Script", cursive;
     text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+
+  h1 {
+    color: #FF4CAA;
+    font-size: 36px;
+    margin-bottom: 30px;
+  }
+
+  #fileInput {
+    display: none;
   }
 
   .btn {
-    background: black;
+    background: #FF4CAA;
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 12px 30px;
     border-radius: 50px;
     font-size: 16px;
     cursor: pointer;
-    margin-top: 20px;
-    transition: opacity 0.3s;
+    margin: 10px;
+    transition: 0.3s;
   }
 
   .btn:hover {
-    opacity: 0.8;
+    background: #d43d8b;
+  }
+
+  .pulsante {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 25px;
+    background-color: black;
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: 0.3s;
+  }
+
+  .pulsante:hover {
+    background-color: #333;
+  }
+
+  #preview {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 15px;
+  }
+
+  .preview-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 2px solid #FF4CAA;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   }
 
   #progressContainer {
     margin-top: 20px;
-    width: 80%;
-    max-width: 500px;
+    width: 90%;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -62,14 +106,46 @@
     transition: width 0.3s ease;
   }
 </style>
+</head>
+<body>
+
+<h1>Carica le tue foto</h1>
+
+<label class="btn" for="fileInput">Seleziona Foto</label>
+<input type="file" id="fileInput" multiple accept="image/*">
+<button class="btn" onclick="uploadFiles()">Carica</button>
+
+<div id="preview"></div>
+<div id="progressContainer"></div>
+
+<a href="gallery.html" class="pulsante">Galleria</a>
 
 <script>
+const fileInput = document.getElementById('fileInput');
+const previewContainer = document.getElementById('preview');
+
+fileInput.addEventListener('change', () => {
+  previewContainer.innerHTML = '';
+  const files = fileInput.files;
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'preview-img';
+      previewContainer.appendChild(img);
+    }
+    reader.readAsDataURL(file);
+  }
+});
+
 function uploadFiles() {
-  const input = document.getElementById('fileInput');
   const container = document.getElementById('progressContainer');
   container.innerHTML = ""; // pulisce le barre precedenti
 
-  const files = input.files;
+  const files = fileInput.files;
   if (files.length === 0) {
     alert("Seleziona almeno una foto.");
     return;
@@ -131,3 +207,6 @@ function uploadFiles() {
   xhr.send(formData);
 }
 </script>
+
+</body>
+</html>
