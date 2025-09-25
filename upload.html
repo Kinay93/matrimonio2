@@ -62,6 +62,13 @@
     gap: 15px;
   }
 
+  .preview-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .preview-img {
     width: 150px;
     height: 150px;
@@ -69,6 +76,22 @@
     border-radius: 15px;
     border: 2px solid #FF4CAA;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  .remove-btn {
+    margin-top: 5px;
+    background-color: #FF4CAA;
+    border: none;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.3s;
+  }
+
+  .remove-btn:hover {
+    background-color: #d43d8b;
   }
 
   #progressContainer {
@@ -123,36 +146,51 @@
 <script>
 const fileInput = document.getElementById('fileInput');
 const previewContainer = document.getElementById('preview');
+let selectedFiles = [];
 
 fileInput.addEventListener('change', () => {
-  previewContainer.innerHTML = '';
-  const files = fileInput.files;
-  if (files.length === 0) return;
+  selectedFiles = Array.from(fileInput.files); // aggiorna array
+  renderPreview();
+});
 
-  for (const file of files) {
+function renderPreview() {
+  previewContainer.innerHTML = '';
+  selectedFiles.forEach((file, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'preview-wrapper';
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = document.createElement('img');
       img.src = e.target.result;
       img.className = 'preview-img';
-      previewContainer.appendChild(img);
+      wrapper.appendChild(img);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Rimuovi';
+      removeBtn.className = 'remove-btn';
+      removeBtn.onclick = () => {
+        selectedFiles.splice(index, 1);
+        renderPreview();
+      };
+      wrapper.appendChild(removeBtn);
     }
     reader.readAsDataURL(file);
-  }
-});
+    previewContainer.appendChild(wrapper);
+  });
+}
 
 function uploadFiles() {
-  const container = document.getElementById('progressContainer');
-  container.innerHTML = ""; // pulisce le barre precedenti
-
-  const files = fileInput.files;
-  if (files.length === 0) {
+  if (selectedFiles.length === 0) {
     alert("Seleziona almeno una foto.");
     return;
   }
 
+  const container = document.getElementById('progressContainer');
+  container.innerHTML = "";
   const progressElements = [];
-  for (const file of files) {
+
+  selectedFiles.forEach(file => {
     const wrapper = document.createElement("div");
     wrapper.className = "progressWrapper";
 
@@ -171,12 +209,10 @@ function uploadFiles() {
     container.appendChild(wrapper);
 
     progressElements.push({file, progress, label});
-  }
+  });
 
   const formData = new FormData();
-  for (const f of files) {
-    formData.append("foto", f);
-  }
+  selectedFiles.forEach(f => formData.append("foto", f));
 
   const xhr = new XMLHttpRequest();
   xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
