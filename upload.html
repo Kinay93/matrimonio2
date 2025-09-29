@@ -5,129 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carica le tue foto e video</title>
 <style>
-  body {
-    background-color: #F7EAEC;
-    font-family: "Dancing Script", cursive;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
-  }
-
-  h1 {
-    color: #FF4CAA;
-    font-size: 36px;
-    margin-bottom: 30px;
-  }
-
-  #fileInput {
-    display: none;
-  }
-
-  .btn {
-    background: #FF4CAA;
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 50px;
-    font-size: 16px;
-    cursor: pointer;
-    margin: 10px;
-    transition: 0.3s;
-  }
-
-  .btn:hover {
-    background: #d43d8b;
-  }
-
-  .pulsante {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 12px 25px;
-    background-color: black;
-    color: white;
-    text-decoration: none;
-    border-radius: 50px;
-    transition: 0.3s;
-  }
-
-  .pulsante:hover {
-    background-color: #333;
-  }
-
-  #preview {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 20px;
-    gap: 15px;
-  }
-
-  .preview-wrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .preview-img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 15px;
-    border: 2px solid #FF4CAA;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  }
-
-  .remove-btn {
-    margin-top: 5px;
-    background-color: #FF4CAA;
-    border: none;
-    color: white;
-    padding: 5px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: 0.3s;
-  }
-
-  .remove-btn:hover {
-    background-color: #d43d8b;
-  }
-
-  #progressContainer {
-    margin-top: 20px;
-    width: 90%;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .progressWrapper {
-    margin-bottom: 15px;
-    text-align: left;
-  }
-
-  .progressLabel {
-    font-size: 14px;
-    color: #FF4CAA;
-    margin-bottom: 5px;
-  }
-
-  .progressBar {
-    width: 100%;
-    height: 14px;
-    background: #eee;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-  }
-
-  .progressBar div {
-    height: 100%;
-    width: 0;
-    background: linear-gradient(90deg, #FF4CAA, #FF85D0);
-    transition: width 0.3s ease;
-  }
+  body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
+  h1 { color: #FF4CAA; font-size: 36px; margin-bottom: 30px; }
+  #fileInput { display: none; }
+  .btn { background: #FF4CAA; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; margin: 10px; transition: 0.3s; }
+  .btn:hover { background: #d43d8b; }
+  .pulsante { display: inline-block; margin-top: 20px; padding: 12px 25px; background-color: black; color: white; text-decoration: none; border-radius: 50px; transition: 0.3s; }
+  .pulsante:hover { background-color: #333; }
+  #preview { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; gap: 15px; }
+  .preview-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .preview-img { width: 150px; height: 150px; object-fit: cover; border-radius: 15px; border: 2px solid #FF4CAA; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .remove-btn { margin-top: 5px; background-color: #FF4CAA; border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.3s; }
+  .remove-btn:hover { background-color: #d43d8b; }
+  #progressContainer { margin-top: 20px; width: 90%; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .progressWrapper { margin-bottom: 15px; text-align: left; }
+  .progressLabel { font-size: 14px; color: #FF4CAA; margin-bottom: 5px; }
+  .progressBar { width: 100%; height: 14px; background: #eee; border-radius: 10px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+  .progressBar div { height: 100%; width: 0; background: linear-gradient(90deg, #FF4CAA, #FF85D0); transition: width 0.3s ease; }
 </style>
 </head>
 <body>
@@ -189,7 +83,7 @@ function renderPreview() {
   });
 }
 
-function uploadFiles() {
+async function uploadFiles() {
   if (selectedFiles.length === 0) {
     alert("Seleziona almeno un file.");
     return;
@@ -199,7 +93,7 @@ function uploadFiles() {
   container.innerHTML = "";
   const progressElements = [];
 
-  selectedFiles.forEach(file => {
+  for (const file of selectedFiles) {
     const wrapper = document.createElement("div");
     wrapper.className = "progressWrapper";
 
@@ -218,38 +112,52 @@ function uploadFiles() {
     container.appendChild(wrapper);
 
     progressElements.push({file, progress, label});
-  });
+  }
 
-  const formData = new FormData();
-  selectedFiles.forEach(f => formData.append("foto", f));
-
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
-
-  xhr.upload.addEventListener("progress", (e) => {
-    if (e.lengthComputable) {
-      const percent = (e.loaded / e.total) * 100;
-      progressElements.forEach(pe => pe.progress.style.width = percent + "%");
-    }
-  });
-
-  xhr.onload = () => {
-    if (xhr.status === 200) {
-      const response = JSON.parse(xhr.responseText);
-      response.files.forEach(f => {
-        const pe = progressElements.find(p => p.file.name === f.filename);
-        if (pe) pe.label.textContent = "✅ Caricato: " + f.filename;
+  for (const pe of progressElements) {
+    try {
+      // 1️⃣ Genera signed URL dal backend
+      const resp = await fetch("https://matrimoniome.appspot.com/generate_upload_url", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ filename: pe.file.name, contentType: pe.file.type })
       });
-    } else {
-      progressElements.forEach(pe => pe.label.textContent = "❌ Errore: " + pe.file.name);
+      const data = await resp.json();
+      const uploadUrl = data.uploadUrl;
+      const publicUrl = data.publicUrl;
+
+      // 2️⃣ Carica direttamente su GCS usando PUT
+      await uploadToGCS(pe.file, uploadUrl, pe.progress, pe.label);
+
+      // 3️⃣ Aggiorna label
+      pe.label.textContent = "✅ Caricato: " + pe.file.name;
+    } catch (err) {
+      console.error(err);
+      pe.label.textContent = "❌ Errore: " + pe.file.name;
     }
-  };
+  }
+}
 
-  xhr.onerror = () => {
-    progressElements.forEach(pe => pe.label.textContent = "❌ Errore connessione: " + pe.file.name);
-  };
+function uploadToGCS(file, url, progressBarDiv, labelDiv) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url, true);
+    xhr.setRequestHeader("Content-Type", file.type);
 
-  xhr.send(formData);
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const percent = (e.loaded / e.total) * 100;
+        progressBarDiv.style.width = percent + "%";
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status === 200) resolve();
+      else reject("Upload fallito");
+    };
+    xhr.onerror = () => reject("Errore connessione");
+    xhr.send(file);
+  });
 }
 </script>
 
