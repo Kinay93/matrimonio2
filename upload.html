@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carica le tue foto</title>
+<title>Carica le tue foto e video</title>
 <style>
   body {
     background-color: #F7EAEC;
@@ -132,10 +132,10 @@
 </head>
 <body>
 
-<h1>Carica le tue foto</h1>
+<h1>Carica le tue foto e video</h1>
 
-<label class="btn" for="fileInput">Seleziona Foto</label>
-<input type="file" id="fileInput" multiple accept="image/*">
+<label class="btn" for="fileInput">Seleziona File</label>
+<input type="file" id="fileInput" multiple accept="image/*,video/*">
 <button class="btn" onclick="uploadFiles()">Carica</button>
 
 <div id="preview"></div>
@@ -149,7 +149,7 @@ const previewContainer = document.getElementById('preview');
 let selectedFiles = [];
 
 fileInput.addEventListener('change', () => {
-  selectedFiles = Array.from(fileInput.files); // aggiorna array
+  selectedFiles = Array.from(fileInput.files); 
   renderPreview();
 });
 
@@ -159,30 +159,39 @@ function renderPreview() {
     const wrapper = document.createElement('div');
     wrapper.className = 'preview-wrapper';
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.className = 'preview-img';
-      wrapper.appendChild(img);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = 'Rimuovi';
-      removeBtn.className = 'remove-btn';
-      removeBtn.onclick = () => {
-        selectedFiles.splice(index, 1);
-        renderPreview();
+    if (file.type.startsWith("video/")) {
+      const vid = document.createElement("video");
+      vid.src = URL.createObjectURL(file);
+      vid.className = "preview-img";
+      vid.controls = true;
+      wrapper.appendChild(vid);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-img';
+        wrapper.appendChild(img);
       };
-      wrapper.appendChild(removeBtn);
+      reader.readAsDataURL(file);
     }
-    reader.readAsDataURL(file);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Rimuovi';
+    removeBtn.className = 'remove-btn';
+    removeBtn.onclick = () => {
+      selectedFiles.splice(index, 1);
+      renderPreview();
+    };
+    wrapper.appendChild(removeBtn);
+
     previewContainer.appendChild(wrapper);
   });
 }
 
 function uploadFiles() {
   if (selectedFiles.length === 0) {
-    alert("Seleziona almeno una foto.");
+    alert("Seleziona almeno un file.");
     return;
   }
 
