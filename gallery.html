@@ -31,7 +31,7 @@
       align-items: center;
     }
     #modal img, #modal video {
-      max-width: 95vw;   /* ✅ adattamento migliore */
+      max-width: 95vw;
       max-height: 90vh;
       border-radius: 5px;
     }
@@ -97,7 +97,7 @@
         gallery.forEach((file, index) => {
           const ext = file.name.split('.').pop().toLowerCase();
           if (["mp4","webm","ogg"].includes(ext)) {
-            // ✅ video con poster (thumb) e preload ottimizzato
+            // Video thumbnail + preload ottimizzato
             const video = document.createElement('video');
             video.poster = file.thumbUrl || ""; 
             video.setAttribute("data-src", file.url); 
@@ -137,9 +137,9 @@
 
       if (["mp4","webm","ogg"].includes(ext)) {
         const vid = document.createElement('video');
-        vid.src = file.url; // full quality solo nel modal
+        vid.src = file.url; // qualità piena solo nel modal
         vid.controls = true;
-        vid.autoplay = true; // ✅ autoplay solo qui
+        vid.autoplay = true;
         modalContent.appendChild(vid);
       } else {
         const img = document.createElement('img');
@@ -150,7 +150,7 @@
       preloadNeighbors();
     }
 
-    // Precarica immagine/video successivo e precedente
+    // Precarica media successivo e precedente
     function preloadNeighbors() {
       const nextIndex = (currentIndex + 1) % gallery.length;
       const prevIndex = (currentIndex - 1 + gallery.length) % gallery.length;
@@ -169,7 +169,7 @@
       });
     }
 
-    // Frecce da tastiera
+    // Frecce tastiera
     document.addEventListener("keydown", (e) => {
       if (document.getElementById('modal').style.display === 'flex') {
         if (e.key === "ArrowRight") nextMedia();
@@ -192,7 +192,7 @@
       showMedia();
     }
 
-    // Swipe su mobile
+    // Swipe mobile
     let startX = 0;
     document.getElementById('modal').addEventListener("touchstart", (e) => {
       startX = e.touches[0].clientX;
@@ -203,7 +203,7 @@
       if (startX - endX > 50) nextMedia();   
     });
 
-    // ✅ Chiudi modal cliccando sullo sfondo
+    // Chiudi modal cliccando sullo sfondo
     document.getElementById('modal').addEventListener("click", (e) => {
       if (e.target.id === "modal") closeModal();
     });
