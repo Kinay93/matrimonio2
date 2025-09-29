@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carica le tue foto e video</title>
 <style>
-  body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
+ body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
   h1 { color: #FF4CAA; font-size: 36px; margin-bottom: 30px; }
   #fileInput { display: none; }
   .btn { background: #FF4CAA; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; margin: 10px; transition: 0.3s; }
@@ -91,73 +91,39 @@ async function uploadFiles() {
 
   const container = document.getElementById('progressContainer');
   container.innerHTML = "";
-  const progressElements = [];
-
+  
   for (const file of selectedFiles) {
     const wrapper = document.createElement("div");
     wrapper.className = "progressWrapper";
-
     const label = document.createElement("div");
     label.className = "progressLabel";
     label.textContent = "Caricamento: " + file.name;
-
     const bar = document.createElement("div");
     bar.className = "progressBar";
-
     const progress = document.createElement("div");
     bar.appendChild(progress);
-
     wrapper.appendChild(label);
     wrapper.appendChild(bar);
     container.appendChild(wrapper);
 
-    progressElements.push({file, progress, label});
-  }
-
-  for (const pe of progressElements) {
     try {
-      // 1️⃣ Genera signed URL dal backend
-      const resp = await fetch("https://matrimoniome.appspot.com/generate_upload_url", {
+      // 1️⃣ Genera l'upload URL
+      const res = await fetch("https://matrimoniome.appspot.com/generate_upload_url", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ filename: pe.file.name, contentType: pe.file.type })
+        body: JSON.stringify({filename: file.name, contentType: file.type})
       });
-      const data = await resp.json();
-      const uploadUrl = data.uploadUrl;
-      const publicUrl = data.publicUrl;
+      const {uploadUrl, publicUrl} = await res.json();
 
-      // 2️⃣ Carica direttamente su GCS usando PUT
-      await uploadToGCS(pe.file, uploadUrl, pe.progress, pe.label);
+      // 2️⃣ Upload diretto su GCS
+      await fetch(uploadUrl, {method: "PUT", headers: {"Content-Type": file.type}, body: file});
 
-      // 3️⃣ Aggiorna label
-      pe.label.textContent = "✅ Caricato: " + pe.file.name;
+      label.textContent = "✅ Caricato: " + file.name;
     } catch (err) {
       console.error(err);
-      pe.label.textContent = "❌ Errore: " + pe.file.name;
+      label.textContent = "❌ Errore: " + file.name;
     }
   }
-}
-
-function uploadToGCS(file, url, progressBarDiv, labelDiv) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url, true);
-    xhr.setRequestHeader("Content-Type", file.type);
-
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) {
-        const percent = (e.loaded / e.total) * 100;
-        progressBarDiv.style.width = percent + "%";
-      }
-    });
-
-    xhr.onload = () => {
-      if (xhr.status === 200) resolve();
-      else reject("Upload fallito");
-    };
-    xhr.onerror = () => reject("Errore connessione");
-    xhr.send(file);
-  });
 }
 </script>
 
