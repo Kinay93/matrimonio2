@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carica le tue foto e video</title>
 <style>
- body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
+  body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
   h1 { color: #FF4CAA; font-size: 36px; margin-bottom: 30px; }
   #fileInput { display: none; }
   .btn { background: #FF4CAA; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; margin: 10px; transition: 0.3s; }
@@ -34,7 +34,6 @@
 
 <div id="preview"></div>
 <div id="progressContainer"></div>
-
 <a href="gallery.html" class="pulsante">Galleria</a>
 
 <script>
@@ -43,7 +42,7 @@ const previewContainer = document.getElementById('preview');
 let selectedFiles = [];
 
 fileInput.addEventListener('change', () => {
-  selectedFiles = Array.from(fileInput.files); 
+  selectedFiles = Array.from(fileInput.files);
   renderPreview();
 });
 
@@ -53,12 +52,23 @@ function renderPreview() {
     const wrapper = document.createElement('div');
     wrapper.className = 'preview-wrapper';
 
-    if (file.type.startsWith("video/")) {
+    if(file.type.startsWith("video/")) {
       const vid = document.createElement("video");
       vid.src = URL.createObjectURL(file);
-      vid.className = "preview-img";
-      vid.controls = true;
-      wrapper.appendChild(vid);
+      vid.preload = "metadata";
+      vid.muted = true;
+      vid.onloadeddata = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 150;
+        canvas.height = 150;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL("image/jpeg");
+        img.className = "preview-img";
+        wrapper.insertBefore(img, wrapper.firstChild);
+        URL.revokeObjectURL(vid.src);
+      };
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -78,52 +88,69 @@ function renderPreview() {
       renderPreview();
     };
     wrapper.appendChild(removeBtn);
-
     previewContainer.appendChild(wrapper);
   });
 }
 
-async function uploadFiles() {
-  if (selectedFiles.length === 0) {
+function uploadFiles() {
+  if(selectedFiles.length === 0){
     alert("Seleziona almeno un file.");
     return;
   }
 
   const container = document.getElementById('progressContainer');
   container.innerHTML = "";
-  
-  for (const file of selectedFiles) {
+  const progressElements = [];
+
+  selectedFiles.forEach(file => {
     const wrapper = document.createElement("div");
     wrapper.className = "progressWrapper";
+
     const label = document.createElement("div");
     label.className = "progressLabel";
     label.textContent = "Caricamento: " + file.name;
+
     const bar = document.createElement("div");
     bar.className = "progressBar";
     const progress = document.createElement("div");
     bar.appendChild(progress);
+
     wrapper.appendChild(label);
     wrapper.appendChild(bar);
     container.appendChild(wrapper);
+    progressElements.push({file, progress, label});
+  });
 
-    try {
-      // 1️⃣ Genera l'upload URL
-      const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({filename: file.name, contentType: file.type})
-      });
-      const {uploadUrl, publicUrl} = await res.json();
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append("foto", f));
 
-      // 2️⃣ Upload diretto su GCS
-      await fetch(uploadUrl, {method: "PUT", headers: {"Content-Type": file.type}, body: file});
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
 
-      label.textContent = "✅ Caricato: " + file.name;
-    } catch (err) {
-      console.error(err);
-      label.textContent = "❌ Errore: " + file.name;
+  xhr.upload.addEventListener("progress", (e) => {
+    if(e.lengthComputable){
+      const percent = (e.loaded / e.total) * 100;
+      progressElements.forEach(pe => pe.progress.style.width = percent + "%");
     }
-  }
+  });
+
+  xhr.onload = () => {
+    if(xhr.status === 200){
+      const response = JSON.parse(xhr.responseText);
+      response.files.forEach(f => {
+        const pe = progressElements.find(p => p.file.name === f.filename);
+        if(pe) pe.label.textContent = "✅ Caricato: " + f.filename;
+      });
+    } else {
+      progressElements.forEach(pe => pe.label.textContent = "❌ Errore: " + pe.file.name);
+    }
+  };
+
+  xhr.onerror = () => {
+    progressElements.forEach(pe => pe.label.textContent = "❌ Errore connessione: " + pe.file.name);
+  };
+
+  xhr.send(formData);
 }
 </script>
 
