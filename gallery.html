@@ -4,209 +4,145 @@
   <meta charset="UTF-8">
   <title>Galleria Matrimonio</title>
   <style>
-    body {
-      background-color: #F7EAEC; 
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
+    body { background-color: #F7EAEC; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
     h1 { color: #FF4CAA; }
     .grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .grid img, .grid video {
-      width: 200px;
-      cursor: pointer;
-      border: 2px solid #ccc;
-      border-radius: 4px;
-      object-fit: cover;
-    }
-    #modal {
-      display: none;
-      position: fixed;
-      top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.9);
-      justify-content: center;
-      align-items: center;
-    }
-    #modal img, #modal video {
-      max-width: 95vw;
-      max-height: 90vh;
-      border-radius: 5px;
-    }
-    #close {
-      position: absolute;
-      top: 20px; right: 20px;
-      color: white; font-size: 30px;
-      cursor: pointer;
-    }
-    .btn {
-      background: black;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      margin: 10px;
-    }
-    .arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 40px;
-      color: white;
-      cursor: pointer;
-      user-select: none;
-      padding: 10px;
-    }
-    #prev { left: 20px; }
-    #next { right: 20px; }
+    .grid img, .grid video { width: 200px; cursor: pointer; border: 2px solid #ccc; border-radius: 4px; object-fit: cover; }
+    #modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+    #modal img, #modal video { max-width: 95vw; max-height: 90vh; border-radius: 5px; }
+    #close { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
+    .btn { background: black; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 10px; }
+    .arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 40px; color: white; cursor: pointer; user-select: none; padding: 10px; }
+    #prev { left: 20px; } #next { right: 20px; }
   </style>
 </head>
 <body>
-  <h1>Galleria Foto & Video</h1>
-  <div class="grid" id="photoGrid"></div>
+<h1>Galleria Foto & Video</h1>
+<div class="grid" id="photoGrid"></div>
 
-  <a class="btn" id="uploadBtn">Carica una Foto/Video</a>
-  <a class="btn" id="homeBtn">Home</a>
+<a class="btn" id="uploadBtn">Carica una Foto/Video</a>
+<a class="btn" id="homeBtn">Home</a>
 
-  <!-- Modal -->
-  <div id="modal">
-    <span id="close">&times;</span>
-    <span id="prev" class="arrow">&#10094;</span>
-    <div id="modalContent"></div>
-    <span id="next" class="arrow">&#10095;</span>
-  </div>
+<div id="modal">
+  <span id="close">&times;</span>
+  <span id="prev" class="arrow">&#10094;</span>
+  <div id="modalContent"></div>
+  <span id="next" class="arrow">&#10095;</span>
+</div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const coppia = params.get("coppia") || "default";
+<script>
+const params = new URLSearchParams(window.location.search);
+const coppia = params.get("coppia") || "default";
 
-    document.getElementById("uploadBtn").href = `upload.html?coppia=${coppia}`;
-    document.getElementById("homeBtn").href = `index.html?coppia=${coppia}`;
+document.getElementById("uploadBtn").href = `upload.html?coppia=${coppia}`;
+document.getElementById("homeBtn").href = `index.html?coppia=${coppia}`;
 
-    let gallery = [];  
-    let currentIndex = 0;
+let gallery = [];
+let currentIndex = 0;
 
-    fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
-      .then(res => res.json())
-      .then(data => {
-        const grid = document.getElementById('photoGrid');
-        gallery = data;
+fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
+  .then(res => res.json())
+  .then(data => {
+    const grid = document.getElementById('photoGrid');
+    gallery = data;
 
-        gallery.forEach((file, index) => {
-          const ext = file.name.split('.').pop().toLowerCase();
-          if (["mp4","webm","ogg"].includes(ext)) {
-            // Video thumbnail + preload ottimizzato
-            const video = document.createElement('video');
-            video.poster = file.thumbUrl || ""; 
-            video.setAttribute("data-src", file.url); 
-            video.muted = true;
-            video.loop = true;
-            video.playsInline = true;
-            video.preload = "none"; 
-            video.onclick = () => openModal(index);
-            grid.appendChild(video);
-          } else {
-            const img = document.createElement('img');
-            img.src = file.thumbUrl || file.url;
-            img.alt = file.name;
-            img.loading = "lazy";
-            img.onclick = () => openModal(index);
-            grid.appendChild(img);
-          }
-        });
-      });
-
-    function openModal(index) {
-      currentIndex = index;
-      showMedia();
-      document.getElementById('modal').style.display = 'flex';
-    }
-
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-      document.getElementById('modalContent').innerHTML = "";
-    }
-
-    function showMedia() {
-      const modalContent = document.getElementById('modalContent');
-      modalContent.innerHTML = "";
-      const file = gallery[currentIndex];
+    gallery.forEach((file, index) => {
       const ext = file.name.split('.').pop().toLowerCase();
-
       if (["mp4","webm","ogg"].includes(ext)) {
-        const vid = document.createElement('video');
-        vid.src = file.url; // qualità piena solo nel modal
-        vid.controls = true;
-        vid.autoplay = true;
-        modalContent.appendChild(vid);
+        const video = document.createElement('video');
+        video.poster = file.thumbUrl || "";
+        video.setAttribute("data-src", file.url);
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = "none";
+        video.onclick = () => openModal(index);
+        grid.appendChild(video);
       } else {
         const img = document.createElement('img');
-        img.src = file.url;
-        modalContent.appendChild(img);
-      }
-
-      preloadNeighbors();
-    }
-
-    // Precarica media successivo e precedente
-    function preloadNeighbors() {
-      const nextIndex = (currentIndex + 1) % gallery.length;
-      const prevIndex = (currentIndex - 1 + gallery.length) % gallery.length;
-
-      [nextIndex, prevIndex].forEach(i => {
-        const file = gallery[i];
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (["mp4","webm","ogg"].includes(ext)) {
-          const vid = document.createElement('video');
-          vid.src = file.url;
-          vid.preload = "metadata";
-        } else {
-          const img = new Image();
-          img.src = file.url;
-        }
-      });
-    }
-
-    // Frecce tastiera
-    document.addEventListener("keydown", (e) => {
-      if (document.getElementById('modal').style.display === 'flex') {
-        if (e.key === "ArrowRight") nextMedia();
-        if (e.key === "ArrowLeft") prevMedia();
-        if (e.key === "Escape") closeModal();
+        img.src = file.thumbUrl || file.url;
+        img.alt = file.name;
+        img.loading = "lazy";
+        img.onclick = () => openModal(index);
+        grid.appendChild(img);
       }
     });
+  });
 
-    // Bottoni a schermo
-    document.getElementById("next").onclick = nextMedia;
-    document.getElementById("prev").onclick = prevMedia;
-    document.getElementById("close").onclick = closeModal;
+function openModal(index) {
+  currentIndex = index;
+  showMedia();
+  document.getElementById('modal').style.display = 'flex';
+}
 
-    function nextMedia() {
-      currentIndex = (currentIndex + 1) % gallery.length;
-      showMedia();
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  document.getElementById('modalContent').innerHTML = "";
+}
+
+function showMedia() {
+  const modalContent = document.getElementById('modalContent');
+  modalContent.innerHTML = "";
+  const file = gallery[currentIndex];
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (["mp4","webm","ogg"].includes(ext)) {
+    const vid = document.createElement('video');
+    vid.src = file.url;
+    vid.controls = true;
+    vid.autoplay = true;
+    modalContent.appendChild(vid);
+  } else {
+    const img = document.createElement('img');
+    img.src = file.url;
+    modalContent.appendChild(img);
+  }
+
+  preloadNeighbors();
+}
+
+function preloadNeighbors() {
+  const nextIndex = (currentIndex + 1) % gallery.length;
+  const prevIndex = (currentIndex - 1 + gallery.length) % gallery.length;
+
+  [nextIndex, prevIndex].forEach(i => {
+    const file = gallery[i];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (["mp4","webm","ogg"].includes(ext)) {
+      const vid = document.createElement('video');
+      vid.src = file.url;
+      vid.preload = "metadata";
+    } else {
+      const img = new Image();
+      img.src = file.url;
     }
-    function prevMedia() {
-      currentIndex = (currentIndex - 1 + gallery.length) % gallery.length;
-      showMedia();
-    }
+  });
+}
 
-    // Swipe mobile
-    let startX = 0;
-    document.getElementById('modal').addEventListener("touchstart", (e) => {
-      startX = e.touches[0].clientX;
-    });
-    document.getElementById('modal').addEventListener("touchend", (e) => {
-      let endX = e.changedTouches[0].clientX;
-      if (endX - startX > 50) prevMedia();   
-      if (startX - endX > 50) nextMedia();   
-    });
+document.addEventListener("keydown", (e) => {
+  if (document.getElementById('modal').style.display === 'flex') {
+    if (e.key === "ArrowRight") nextMedia();
+    if (e.key === "ArrowLeft") prevMedia();
+    if (e.key === "Escape") closeModal();
+  }
+});
 
-    // Chiudi modal cliccando sullo sfondo
-    document.getElementById('modal').addEventListener("click", (e) => {
-      if (e.target.id === "modal") closeModal();
-    });
-  </script>
+document.getElementById("next").onclick = nextMedia;
+document.getElementById("prev").onclick = prevMedia;
+document.getElementById("close").onclick = closeModal;
+
+function nextMedia() { currentIndex = (currentIndex + 1) % gallery.length; showMedia(); }
+function prevMedia() { currentIndex = (currentIndex - 1 + gallery.length) % gallery.length; showMedia(); }
+
+let startX = 0;
+document.getElementById('modal').addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+document.getElementById('modal').addEventListener("touchend", (e) => {
+  let endX = e.changedTouches[0].clientX;
+  if (endX - startX > 50) prevMedia();
+  if (startX - endX > 50) nextMedia();
+});
+
+document.getElementById('modal').addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
+</script>
 </body>
 </html>
