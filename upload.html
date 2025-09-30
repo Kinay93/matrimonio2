@@ -74,6 +74,26 @@ function renderPreview() {
   });
 }
 
+function uploadWithProgress(url, file, progressElement) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = (e.loaded / e.total) * 100;
+        progressElement.style.width = percent + "%";
+      }
+    };
+
+    xhr.onload = () => xhr.status === 200 ? resolve() : reject(xhr.statusText);
+    xhr.onerror = () => reject(xhr.statusText);
+
+    xhr.send(file);
+  });
+}
+
 async function uploadFiles() {
   if(selectedFiles.length===0){ alert("Seleziona almeno un file."); return; }
   const container=document.getElementById('progressContainer');
@@ -101,6 +121,7 @@ async function uploadFiles() {
         const res=await fetch("https://matrimoniome.appspot.com/upload", {method:"POST", body:formData});
         const data=await res.json();
         label.textContent="✅ Caricato: "+file.name;
+        progress.style.width="100%";
       } else { 
         // File grande -> signed URL
         const res=await fetch("https://matrimoniome.appspot.com/generate_upload_url",{
@@ -109,7 +130,7 @@ async function uploadFiles() {
           body:JSON.stringify({filename:file.name, contentType:file.type})
         });
         const {uploadUrl, publicUrl}=await res.json();
-        await fetch(uploadUrl,{method:"PUT", headers:{"Content-Type":file.type}, body:file});
+        await uploadWithProgress(uploadUrl, file, progress);
         label.textContent="✅ Caricato: "+file.name;
       }
     } catch(err){
