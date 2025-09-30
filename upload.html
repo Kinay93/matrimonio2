@@ -5,36 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carica le tue foto e video</title>
 <style>
-  body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; margin: 0; padding: 20px; }
-  h1 { color: #FF4CAA; font-size: 36px; margin-bottom: 30px; }
-  #fileInput { display: none; }
-  .btn { background: #FF4CAA; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; margin: 10px; transition: 0.3s; }
-  .btn:hover { background: #d43d8b; }
-  .pulsante { display: inline-block; margin-top: 20px; padding: 12px 25px; background-color: black; color: white; text-decoration: none; border-radius: 50px; transition: 0.3s; }
-  .pulsante:hover { background-color: #333; }
-  #preview { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; gap: 15px; }
-  .preview-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-  .preview-img { width: 150px; height: 150px; object-fit: cover; border-radius: 15px; border: 2px solid #FF4CAA; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-  .remove-btn { margin-top: 5px; background-color: #FF4CAA; border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.3s; }
-  .remove-btn:hover { background-color: #d43d8b; }
-  #progressContainer { margin-top: 20px; width: 90%; max-width: 600px; margin-left: auto; margin-right: auto; }
-  .progressWrapper { margin-bottom: 15px; text-align: left; }
-  .progressLabel { font-size: 14px; color: #FF4CAA; margin-bottom: 5px; }
-  .progressBar { width: 100%; height: 14px; background: #eee; border-radius: 10px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
-  .progressBar div { height: 100%; width: 0; background: linear-gradient(90deg, #FF4CAA, #FF85D0); transition: width 0.3s ease; }
+  body { background-color: #F7EAEC; font-family: "Dancing Script", cursive; text-align: center; padding:20px;}
+  h1 { color:#FF4CAA; font-size:36px; margin-bottom:30px; }
+  #fileInput { display:none; }
+  .btn { background:#FF4CAA; color:white; border:none; padding:12px 30px; border-radius:50px; cursor:pointer; margin:10px;}
+  .btn:hover { background:#d43d8b; }
+  #preview { display:flex; flex-wrap:wrap; justify-content:center; gap:15px; margin-top:20px; }
+  .preview-wrapper { display:flex; flex-direction:column; align-items:center; }
+  .preview-img { width:150px; height:150px; object-fit:cover; border-radius:15px; border:2px solid #FF4CAA; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
+  .remove-btn { margin-top:5px; background:#FF4CAA; border:none; color:white; padding:5px 12px; border-radius:20px; cursor:pointer; font-size:12px;}
+  .remove-btn:hover { background:#d43d8b; }
+  #progressContainer { margin-top:20px; width:90%; max-width:600px; margin:auto; }
+  .progressWrapper { margin-bottom:15px; text-align:left; }
+  .progressLabel { font-size:14px; color:#FF4CAA; margin-bottom:5px; }
+  .progressBar { width:100%; height:14px; background:#eee; border-radius:10px; overflow:hidden; }
+  .progressBar div { height:100%; width:0; background:linear-gradient(90deg,#FF4CAA,#FF85D0); transition:width 0.3s ease; }
 </style>
 </head>
 <body>
 
 <h1>Carica le tue foto e video</h1>
-
 <label class="btn" for="fileInput">Seleziona File</label>
 <input type="file" id="fileInput" multiple accept="image/*,video/*">
 <button class="btn" onclick="uploadFiles()">Carica</button>
 
 <div id="preview"></div>
 <div id="progressContainer"></div>
-<a href="gallery.html" class="pulsante">Galleria</a>
+
+<a href="gallery.html" class="btn">Galleria</a>
 
 <script>
 const fileInput = document.getElementById('fileInput');
@@ -48,111 +46,78 @@ fileInput.addEventListener('change', () => {
 
 function renderPreview() {
   previewContainer.innerHTML = '';
-  selectedFiles.forEach((file, index) => {
+  selectedFiles.forEach((file,index)=>{
     const wrapper = document.createElement('div');
-    wrapper.className = 'preview-wrapper';
-
-    if(file.type.startsWith("video/")) {
-      const vid = document.createElement("video");
-      vid.src = URL.createObjectURL(file);
-      vid.preload = "metadata";
-      vid.muted = true;
-      vid.onloadeddata = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = 150;
-        canvas.height = 150;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-        const img = document.createElement("img");
-        img.src = canvas.toDataURL("image/jpeg");
-        img.className = "preview-img";
-        wrapper.insertBefore(img, wrapper.firstChild);
-        URL.revokeObjectURL(vid.src);
-      };
+    wrapper.className='preview-wrapper';
+    if(file.type.startsWith("video/")){
+      const vid=document.createElement("video");
+      vid.src=URL.createObjectURL(file);
+      vid.controls=true;
+      vid.className='preview-img';
+      wrapper.appendChild(vid);
     } else {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.className = 'preview-img';
+      const reader=new FileReader();
+      reader.onload=(e)=>{
+        const img=document.createElement('img');
+        img.src=e.target.result;
+        img.className='preview-img';
         wrapper.appendChild(img);
       };
       reader.readAsDataURL(file);
     }
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = 'Rimuovi';
-    removeBtn.className = 'remove-btn';
-    removeBtn.onclick = () => {
-      selectedFiles.splice(index, 1);
-      renderPreview();
-    };
+    const removeBtn=document.createElement('button');
+    removeBtn.textContent='Rimuovi';
+    removeBtn.className='remove-btn';
+    removeBtn.onclick=()=>{ selectedFiles.splice(index,1); renderPreview(); };
     wrapper.appendChild(removeBtn);
     previewContainer.appendChild(wrapper);
   });
 }
 
-function uploadFiles() {
-  if(selectedFiles.length === 0){
-    alert("Seleziona almeno un file.");
-    return;
-  }
+async function uploadFiles() {
+  if(selectedFiles.length===0){ alert("Seleziona almeno un file."); return; }
+  const container=document.getElementById('progressContainer');
+  container.innerHTML="";
 
-  const container = document.getElementById('progressContainer');
-  container.innerHTML = "";
-  const progressElements = [];
-
-  selectedFiles.forEach(file => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "progressWrapper";
-
-    const label = document.createElement("div");
-    label.className = "progressLabel";
-    label.textContent = "Caricamento: " + file.name;
-
-    const bar = document.createElement("div");
-    bar.className = "progressBar";
-    const progress = document.createElement("div");
+  for(const file of selectedFiles){
+    const wrapper=document.createElement("div");
+    wrapper.className="progressWrapper";
+    const label=document.createElement("div");
+    label.className="progressLabel";
+    label.textContent="Caricamento: "+file.name;
+    const bar=document.createElement("div");
+    bar.className="progressBar";
+    const progress=document.createElement("div");
     bar.appendChild(progress);
-
     wrapper.appendChild(label);
     wrapper.appendChild(bar);
     container.appendChild(wrapper);
-    progressElements.push({file, progress, label});
-  });
 
-  const formData = new FormData();
-  selectedFiles.forEach(f => formData.append("foto", f));
-
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "https://matrimoniome.appspot.com/upload", true);
-
-  xhr.upload.addEventListener("progress", (e) => {
-    if(e.lengthComputable){
-      const percent = (e.loaded / e.total) * 100;
-      progressElements.forEach(pe => pe.progress.style.width = percent + "%");
+    try{
+      if(file.size < 20*1024*1024){ 
+        // File piccolo -> POST diretto
+        const formData=new FormData();
+        formData.append("foto",file);
+        const res=await fetch("https://matrimoniome.appspot.com/upload", {method:"POST", body:formData});
+        const data=await res.json();
+        label.textContent="✅ Caricato: "+file.name;
+      } else { 
+        // File grande -> signed URL
+        const res=await fetch("https://matrimoniome.appspot.com/generate_upload_url",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({filename:file.name, contentType:file.type})
+        });
+        const {uploadUrl, publicUrl}=await res.json();
+        await fetch(uploadUrl,{method:"PUT", headers:{"Content-Type":file.type}, body:file});
+        label.textContent="✅ Caricato: "+file.name;
+      }
+    } catch(err){
+      console.error(err);
+      label.textContent="❌ Errore: "+file.name;
     }
-  });
-
-  xhr.onload = () => {
-    if(xhr.status === 200){
-      const response = JSON.parse(xhr.responseText);
-      response.files.forEach(f => {
-        const pe = progressElements.find(p => p.file.name === f.filename);
-        if(pe) pe.label.textContent = "✅ Caricato: " + f.filename;
-      });
-    } else {
-      progressElements.forEach(pe => pe.label.textContent = "❌ Errore: " + pe.file.name);
-    }
-  };
-
-  xhr.onerror = () => {
-    progressElements.forEach(pe => pe.label.textContent = "❌ Errore connessione: " + pe.file.name);
-  };
-
-  xhr.send(formData);
+  }
 }
 </script>
-
 </body>
 </html>
