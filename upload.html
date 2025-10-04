@@ -50,7 +50,6 @@ function renderPreview() {
     const wrapper = document.createElement('div');
     wrapper.className='preview-wrapper';
     if(file.type.startsWith("video/")){
-      // thumbnail video usando URL temporanea per preview
       const vid = document.createElement("video");
       vid.src = URL.createObjectURL(file);
       vid.controls = true;
@@ -105,7 +104,7 @@ async function uploadFiles() {
         label.textContent = "✅ Caricato: " + file.name;
         progress.style.width = "100%";
       } else {
-        // Video -> sempre Cloud Run con signed URL
+        // Video -> upload con signed URL
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -115,7 +114,16 @@ async function uploadFiles() {
 
         await uploadLargeFile(file, uploadUrl, progress);
 
-        label.innerHTML = `✅ Caricato: <a href="${publicUrl}" target="_blank">${file.name}</a>`;
+        // Rende il video pubblico e recupera l'URL definitivo
+        const pubRes = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/make_public", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({blob_name: `uploads/${file.name}`})
+        });
+        const pubData = await pubRes.json();
+        const finalUrl = pubData.public_url || publicUrl;
+
+        label.innerHTML = `✅ Caricato: <a href="${finalUrl}" target="_blank">${file.name}</a>`;
         progress.style.width = "100%";
       }
     } catch(err){
