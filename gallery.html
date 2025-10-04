@@ -15,6 +15,13 @@
     padding: 20px;
   }
   h1 { color: #FF4CAA; margin-bottom: 20px; }
+  .filters {
+    margin-bottom: 20px;
+  }
+  .filters button {
+    background: #FF4CAA; color: white; border:none; padding:8px 16px; margin:5px; border-radius:8px; cursor:pointer;
+  }
+  .filters button.active { background:#d43d8b; }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -22,12 +29,21 @@
     width: 100%;
     max-width: 1200px;
   }
-  .grid img, .grid video {
+  .grid-item {
     width: 100%;
-    cursor: pointer;
-    border: 2px solid #ccc;
+    aspect-ratio: 1/1; /* quadrato */
+    overflow: hidden;
     border-radius: 8px;
+    border: 2px solid #ccc;
+    position: relative;
+    cursor: pointer;
+    background: #eee;
+  }
+  .grid-item img, .grid-item video {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    display: block;
   }
   #modal {
     display: none;
@@ -48,14 +64,8 @@
     top: 20px; right: 20px;
     color: white; font-size: 30px; cursor: pointer;
   }
-  .btn {
-    background: black; color: white; padding: 10px 20px;
-    border-radius: 8px; text-decoration: none; margin: 10px;
-  }
-  .arrow {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    font-size: 40px; color: white; cursor: pointer; user-select: none; padding: 10px;
-  }
+  .btn { background: black; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 10px; }
+  .arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 40px; color: white; cursor: pointer; user-select: none; padding: 10px; }
   #prev { left: 20px; }
   #next { right: 20px; }
 </style>
@@ -63,6 +73,13 @@
 <body>
 
 <h1>Galleria Foto & Video</h1>
+
+<div class="filters">
+  <button class="active" data-type="all">Tutti</button>
+  <button data-type="photo">Foto</button>
+  <button data-type="video">Video</button>
+</div>
+
 <div class="grid" id="photoGrid"></div>
 
 <a class="btn" id="uploadBtn">Carica Foto/Video</a>
@@ -78,17 +95,20 @@
 <script>
 const params = new URLSearchParams(window.location.search);
 const coppia = params.get("coppia") || "default";
-
 document.getElementById("uploadBtn").href = `upload.html?coppia=${coppia}`;
 document.getElementById("homeBtn").href = `index.html?coppia=${coppia}`;
 
 let gallery = [];
+let filteredGallery = [];
 let currentIndex = 0;
+let currentFilter = "all";
 
-// --- Lazy load dei thumbnail ---
-function createGridItem(file, index){
+// --- Creazione griglia ---
+function createGridItem(file,index){
   const ext = file.name.split('.').pop().toLowerCase();
   const wrapper = document.createElement('div');
+  wrapper.className = "grid-item";
+  wrapper.dataset.index = index;
 
   if(["mp4","webm","ogg"].includes(ext)){
     const vid = document.createElement('video');
@@ -96,16 +116,15 @@ function createGridItem(file, index){
     vid.dataset.src = file.url;
     vid.muted = true; vid.loop = true; vid.playsInline = true;
     vid.preload = "none";
-    vid.onclick = () => openModal(index);
     wrapper.appendChild(vid);
   } else {
     const img = document.createElement('img');
     img.dataset.src = file.thumbUrl || file.url;
     img.loading = "lazy";
     img.alt = file.name;
-    img.onclick = () => openModal(index);
     wrapper.appendChild(img);
   }
+  wrapper.onclick = () => openModal(index);
   return wrapper;
 }
 
@@ -114,13 +133,37 @@ fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
   .then(res => res.json())
   .then(data => {
     gallery = data;
-    const grid = document.getElementById('photoGrid');
-    gallery.forEach((file,index)=>{
-      const item = createGridItem(file,index);
-      grid.appendChild(item);
-    });
+    filteredGallery = gallery;
+    renderGrid();
     initLazyLoad();
   });
+
+// --- Render griglia filtrata ---
+function renderGrid(){
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = '';
+  filteredGallery.forEach((file,index)=>{
+    const item = createGridItem(file,index);
+    grid.appendChild(item);
+  });
+}
+
+// --- Filtri ---
+document.querySelectorAll(".filters button").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.type;
+    filteredGallery = gallery.filter(file=>{
+      const ext = file.name.split('.').pop().toLowerCase();
+      if(currentFilter==="all") return true;
+      if(currentFilter==="photo") return !["mp4","webm","ogg"].includes(ext);
+      if(currentFilter==="video") return ["mp4","webm","ogg"].includes(ext);
+    });
+    renderGrid();
+    initLazyLoad();
+  }
+});
 
 // --- Modal ---
 function openModal(index){
@@ -135,7 +178,7 @@ function closeModal(){
 function showMedia(){
   const modalContent = document.getElementById('modalContent');
   modalContent.innerHTML='';
-  const file = gallery[currentIndex];
+  const file = filteredGallery[currentIndex];
   const ext = file.name.split('.').pop().toLowerCase();
 
   if(["mp4","webm","ogg"].includes(ext)){
@@ -152,10 +195,10 @@ function showMedia(){
 
 // --- Preload successivo e precedente ---
 function preloadNeighbors(){
-  const nextIndex = (currentIndex+1)%gallery.length;
-  const prevIndex = (currentIndex-1+gallery.length)%gallery.length;
+  const nextIndex = (currentIndex+1)%filteredGallery.length;
+  const prevIndex = (currentIndex-1+filteredGallery.length)%filteredGallery.length;
   [nextIndex,prevIndex].forEach(i=>{
-    const file = gallery[i];
+    const file = filteredGallery[i];
     const ext = file.name.split('.').pop().toLowerCase();
     if(["mp4","webm","ogg"].includes(ext)){
       const vid=document.createElement('video'); vid.src=file.url; vid.preload="metadata";
@@ -176,8 +219,8 @@ document.addEventListener("keydown",(e)=>{
 document.getElementById("next").onclick = nextMedia;
 document.getElementById("prev").onclick = prevMedia;
 document.getElementById("close").onclick = closeModal;
-function nextMedia(){ currentIndex=(currentIndex+1)%gallery.length; showMedia(); }
-function prevMedia(){ currentIndex=(currentIndex-1+gallery.length)%gallery.length; showMedia(); }
+function nextMedia(){ currentIndex=(currentIndex+1)%filteredGallery.length; showMedia(); }
+function prevMedia(){ currentIndex=(currentIndex-1+filteredGallery.length)%filteredGallery.length; showMedia(); }
 
 // --- Swipe mobile ---
 let startX = 0;
@@ -191,7 +234,7 @@ document.getElementById('modal').addEventListener("click",(e)=>{
   if(e.target.id==='modal') closeModal();
 });
 
-// --- Lazy load immagini e video ---
+// --- Lazy load ---
 function initLazyLoad(){
   const images = document.querySelectorAll('.grid img');
   const videos = document.querySelectorAll('.grid video');
