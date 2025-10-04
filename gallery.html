@@ -15,9 +15,7 @@
     padding: 20px;
   }
   h1 { color: #FF4CAA; margin-bottom: 20px; }
-  .filters {
-    margin-bottom: 20px;
-  }
+  .filters { margin-bottom: 20px; }
   .filters button {
     background: #FF4CAA; color: white; border:none; padding:8px 16px; margin:5px; border-radius:8px; cursor:pointer;
   }
@@ -31,7 +29,7 @@
   }
   .grid-item {
     width: 100%;
-    aspect-ratio: 1/1; /* quadrato */
+    aspect-ratio: 1/1;
     overflow: hidden;
     border-radius: 8px;
     border: 2px solid #ccc;
@@ -103,7 +101,6 @@ let filteredGallery = [];
 let currentIndex = 0;
 let currentFilter = "all";
 
-// --- Creazione griglia ---
 function createGridItem(file,index){
   const ext = file.name.split('.').pop().toLowerCase();
   const wrapper = document.createElement('div');
@@ -128,7 +125,6 @@ function createGridItem(file,index){
   return wrapper;
 }
 
-// --- Fetch galleria ---
 fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
   .then(res => res.json())
   .then(data => {
@@ -138,7 +134,6 @@ fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
     initLazyLoad();
   });
 
-// --- Render griglia filtrata ---
 function renderGrid(){
   const grid = document.getElementById('photoGrid');
   grid.innerHTML = '';
@@ -148,7 +143,6 @@ function renderGrid(){
   });
 }
 
-// --- Filtri ---
 document.querySelectorAll(".filters button").forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
@@ -165,7 +159,6 @@ document.querySelectorAll(".filters button").forEach(btn=>{
   }
 });
 
-// --- Modal ---
 function openModal(index){
   currentIndex = index;
   showMedia();
@@ -183,7 +176,7 @@ function showMedia(){
 
   if(["mp4","webm","ogg"].includes(ext)){
     const vid = document.createElement('video');
-    vid.src = file.url; vid.controls=true; vid.autoplay=true;
+    vid.src = file.url; vid.controls=true; vid.autoplay=true; vid.style.maxWidth="95vw"; vid.style.maxHeight="90vh";
     modalContent.appendChild(vid);
   } else {
     const img = document.createElement('img');
@@ -193,7 +186,6 @@ function showMedia(){
   preloadNeighbors();
 }
 
-// --- Preload successivo e precedente ---
 function preloadNeighbors(){
   const nextIndex = (currentIndex+1)%filteredGallery.length;
   const prevIndex = (currentIndex-1+filteredGallery.length)%filteredGallery.length;
@@ -208,7 +200,6 @@ function preloadNeighbors(){
   });
 }
 
-// --- Frecce tastiera ---
 document.addEventListener("keydown",(e)=>{
   if(document.getElementById('modal').style.display==='flex'){
     if(e.key==="ArrowRight") nextMedia();
@@ -222,7 +213,6 @@ document.getElementById("close").onclick = closeModal;
 function nextMedia(){ currentIndex=(currentIndex+1)%filteredGallery.length; showMedia(); }
 function prevMedia(){ currentIndex=(currentIndex-1+filteredGallery.length)%filteredGallery.length; showMedia(); }
 
-// --- Swipe mobile ---
 let startX = 0;
 document.getElementById('modal').addEventListener("touchstart",(e)=>{ startX=e.touches[0].clientX; });
 document.getElementById('modal').addEventListener("touchend",(e)=>{
@@ -234,7 +224,6 @@ document.getElementById('modal').addEventListener("click",(e)=>{
   if(e.target.id==='modal') closeModal();
 });
 
-// --- Lazy load ---
 function initLazyLoad(){
   const images = document.querySelectorAll('.grid img');
   const videos = document.querySelectorAll('.grid video');
