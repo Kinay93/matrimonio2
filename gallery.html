@@ -107,7 +107,6 @@ fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
     gallery = data;
     filteredGallery = gallery.filter(f => f.url.includes("uploads/"));
     renderGrid();
-    initLazyLoad();
   });
 
 // Filtri
@@ -121,7 +120,6 @@ document.querySelectorAll(".filters button").forEach(btn=>{
     else
       filteredGallery = gallery.filter(f=>f.url.includes("/video/"));
     renderGrid();
-    initLazyLoad();
   }
 });
 
@@ -133,9 +131,25 @@ function createGridItem(file,index){
 
   if(currentFilter==="video"){
     const img = document.createElement('img');
-    img.src = file.thumbUrl;
+    img.src = ''; // placeholder
+
+    // Genera thumbnail temporaneo
+    const tempVid = document.createElement('video');
+    tempVid.src = file.url;
+    tempVid.preload = "metadata";
+    tempVid.muted = true;
+
+    tempVid.onloadeddata = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = tempVid.videoHeight / tempVid.videoWidth * 180;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(tempVid, 0, 0, canvas.width, canvas.height);
+      img.src = canvas.toDataURL();
+    };
+
     wrapper.appendChild(img);
-    wrapper.onclick = ()=> window.open(`https://matrimoniome-backend-963503805745.europe-west1.run.app/video/${file.name}`, "_blank");
+    wrapper.onclick = ()=> openModal(index);
   } else {
     const img = document.createElement('img');
     img.src = file.url;
@@ -156,7 +170,7 @@ function renderGrid(){
   });
 }
 
-// Modal per foto
+// Modal per foto/video
 function openModal(index){
   currentIndex = index;
   showMedia();
@@ -229,21 +243,6 @@ document.getElementById('modal').addEventListener("touchend",(e)=>{
 document.getElementById('modal').addEventListener("click",(e)=>{
   if(e.target.id==='modal') closeModal();
 });
-
-// Lazy load
-function initLazyLoad(){
-  const images = document.querySelectorAll('.grid img');
-  const observer = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){
-        const el = entry.target;
-        el.src = el.src || el.dataset.src;
-        observer.unobserve(el);
-      }
-    });
-  }, {rootMargin:"200px"});
-  images.forEach(img=>observer.observe(img));
-}
 </script>
 </body>
 </html>
