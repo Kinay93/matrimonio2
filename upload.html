@@ -54,6 +54,7 @@ function renderPreview() {
       vid.src=URL.createObjectURL(file);
       vid.controls=true;
       vid.className='preview-img';
+      vid.style.objectFit = "cover";
       wrapper.appendChild(vid);
     } else {
       const reader=new FileReader();
@@ -95,7 +96,6 @@ async function uploadFiles() {
 
     try{
       if(file.size < 20*1024*1024){ 
-        // File piccolo -> POST diretto al backend
         const formData = new FormData();
         formData.append("foto", file);
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/upload", {method:"POST", body:formData});
@@ -103,7 +103,6 @@ async function uploadFiles() {
         label.textContent = "✅ Caricato: " + file.name;
         progress.style.width = "100%";
       } else { 
-        // File grande -> signed URL resumable
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
