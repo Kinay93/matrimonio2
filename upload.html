@@ -103,7 +103,7 @@ async function uploadFiles() {
         label.textContent = "✅ Caricato: " + file.name;
         progress.style.width = "100%";
       } else { 
-        // File grande -> signed URL con chunked upload
+        // File grande -> signed URL + route /upload_chunk
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -128,12 +128,12 @@ async function uploadLargeFile(file, uploadUrl, progressElement){
 
   while(offset < file.size){
     const chunk = file.slice(offset, offset + chunkSize);
-    await fetch(uploadUrl, {
+    await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/upload_chunk", {
       method: "PUT",
       headers: {
+        "Upload-Url": uploadUrl,
         "Content-Range": `bytes ${offset}-${offset + chunk.size - 1}/${file.size}`,
-        "Content-Type": file.type,
-        "x-goog-resumable": "start" // necessario per CORS e resumable upload
+        "Content-Type": file.type
       },
       body: chunk
     });
