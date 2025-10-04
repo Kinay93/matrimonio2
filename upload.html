@@ -50,26 +50,27 @@ function renderPreview() {
     const wrapper = document.createElement('div');
     wrapper.className='preview-wrapper';
     if(file.type.startsWith("video/")){
-      const vid=document.createElement("video");
-      vid.src=URL.createObjectURL(file);
-      vid.controls=true;
-      vid.className='preview-img';
+      // thumbnail video usando URL temporanea per preview
+      const vid = document.createElement("video");
+      vid.src = URL.createObjectURL(file);
+      vid.controls = true;
+      vid.className = 'preview-img';
       vid.style.objectFit = "cover";
       wrapper.appendChild(vid);
     } else {
-      const reader=new FileReader();
-      reader.onload=(e)=>{
-        const img=document.createElement('img');
-        img.src=e.target.result;
-        img.className='preview-img';
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-img';
         wrapper.appendChild(img);
       };
       reader.readAsDataURL(file);
     }
-    const removeBtn=document.createElement('button');
-    removeBtn.textContent='Rimuovi';
-    removeBtn.className='remove-btn';
-    removeBtn.onclick=()=>{ selectedFiles.splice(index,1); renderPreview(); };
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Rimuovi';
+    removeBtn.className = 'remove-btn';
+    removeBtn.onclick = () => { selectedFiles.splice(index,1); renderPreview(); };
     wrapper.appendChild(removeBtn);
     previewContainer.appendChild(wrapper);
   });
@@ -95,14 +96,16 @@ async function uploadFiles() {
     container.appendChild(wrapper);
 
     try{
-      if(file.size < 20*1024*1024){ 
+      if(file.type.startsWith("image/")){
+        // Foto -> upload diretto su backend
         const formData = new FormData();
         formData.append("foto", file);
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/upload", {method:"POST", body:formData});
         const data = await res.json();
         label.textContent = "✅ Caricato: " + file.name;
         progress.style.width = "100%";
-      } else { 
+      } else {
+        // Video -> sempre Cloud Run con signed URL
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
