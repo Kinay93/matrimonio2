@@ -73,8 +73,7 @@
 <h1>Galleria Foto & Video</h1>
 
 <div class="filters">
-  <button class="active" data-type="all">Tutti</button>
-  <button data-type="photo">Foto</button>
+  <button class="active" data-type="photo">Foto</button>
   <button data-type="video">Video</button>
 </div>
 
@@ -99,41 +98,55 @@ document.getElementById("homeBtn").href = `index.html?coppia=${coppia}`;
 let gallery = [];
 let filteredGallery = [];
 let currentIndex = 0;
-let currentFilter = "all";
+let currentFilter = "photo";
 
-function createGridItem(file,index){
-  const ext = file.name.split('.').pop().toLowerCase();
-  const wrapper = document.createElement('div');
-  wrapper.className = "grid-item";
-  wrapper.dataset.index = index;
-
-  if(["mp4","webm","ogg"].includes(ext)){
-    const vid = document.createElement('video');
-    vid.poster = file.thumbUrl || "";
-    vid.dataset.src = file.url;
-    vid.muted = true; vid.loop = true; vid.playsInline = true;
-    vid.preload = "none";
-    wrapper.appendChild(vid);
-  } else {
-    const img = document.createElement('img');
-    img.dataset.src = file.thumbUrl || file.url;
-    img.loading = "lazy";
-    img.alt = file.name;
-    wrapper.appendChild(img);
-  }
-  wrapper.onclick = () => openModal(index);
-  return wrapper;
-}
-
+// Fetch galleria
 fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
   .then(res => res.json())
   .then(data => {
     gallery = data;
-    filteredGallery = gallery;
+    filteredGallery = gallery.filter(f => f.url.includes("uploads/"));
     renderGrid();
     initLazyLoad();
   });
 
+// Filtri
+document.querySelectorAll(".filters button").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.type;
+    if(currentFilter==="photo")
+      filteredGallery = gallery.filter(f=>f.url.includes("uploads/"));
+    else
+      filteredGallery = gallery.filter(f=>f.url.includes("/video/"));
+    renderGrid();
+    initLazyLoad();
+  }
+});
+
+// Creazione griglia
+function createGridItem(file,index){
+  const wrapper = document.createElement('div');
+  wrapper.className = "grid-item";
+  wrapper.dataset.index = index;
+
+  if(currentFilter==="video"){
+    const img = document.createElement('img');
+    img.src = file.thumbUrl;
+    wrapper.appendChild(img);
+    wrapper.onclick = ()=> window.open(`https://matrimoniome-backend-963503805745.europe-west1.run.app/video/${file.name}`, "_blank");
+  } else {
+    const img = document.createElement('img');
+    img.src = file.url;
+    wrapper.appendChild(img);
+    wrapper.onclick = () => openModal(index);
+  }
+
+  return wrapper;
+}
+
+// Render griglia
 function renderGrid(){
   const grid = document.getElementById('photoGrid');
   grid.innerHTML = '';
@@ -143,22 +156,7 @@ function renderGrid(){
   });
 }
 
-document.querySelectorAll(".filters button").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    currentFilter = btn.dataset.type;
-    filteredGallery = gallery.filter(file=>{
-      const ext = file.name.split('.').pop().toLowerCase();
-      if(currentFilter==="all") return true;
-      if(currentFilter==="photo") return !["mp4","webm","ogg"].includes(ext);
-      if(currentFilter==="video") return ["mp4","webm","ogg"].includes(ext);
-    });
-    renderGrid();
-    initLazyLoad();
-  }
-});
-
+// Modal per foto
 function openModal(index){
   currentIndex = index;
   showMedia();
@@ -172,20 +170,26 @@ function showMedia(){
   const modalContent = document.getElementById('modalContent');
   modalContent.innerHTML='';
   const file = filteredGallery[currentIndex];
+
+  const vidExts = ["mp4","webm","ogg"];
   const ext = file.name.split('.').pop().toLowerCase();
 
-  if(["mp4","webm","ogg"].includes(ext)){
+  if(vidExts.includes(ext)){
     const vid = document.createElement('video');
-    vid.src = file.url; vid.controls=true; vid.autoplay=true; vid.style.maxWidth="95vw"; vid.style.maxHeight="90vh";
+    vid.src = file.url;
+    vid.controls = true;
+    vid.autoplay = true;
     modalContent.appendChild(vid);
   } else {
     const img = document.createElement('img');
     img.src = file.url;
     modalContent.appendChild(img);
   }
+
   preloadNeighbors();
 }
 
+// Preload successivo/precedente
 function preloadNeighbors(){
   const nextIndex = (currentIndex+1)%filteredGallery.length;
   const prevIndex = (currentIndex-1+filteredGallery.length)%filteredGallery.length;
@@ -200,6 +204,7 @@ function preloadNeighbors(){
   });
 }
 
+// Controlli tastiera
 document.addEventListener("keydown",(e)=>{
   if(document.getElementById('modal').style.display==='flex'){
     if(e.key==="ArrowRight") nextMedia();
@@ -213,6 +218,7 @@ document.getElementById("close").onclick = closeModal;
 function nextMedia(){ currentIndex=(currentIndex+1)%filteredGallery.length; showMedia(); }
 function prevMedia(){ currentIndex=(currentIndex-1+filteredGallery.length)%filteredGallery.length; showMedia(); }
 
+// Swipe mobile
 let startX = 0;
 document.getElementById('modal').addEventListener("touchstart",(e)=>{ startX=e.touches[0].clientX; });
 document.getElementById('modal').addEventListener("touchend",(e)=>{
@@ -224,21 +230,19 @@ document.getElementById('modal').addEventListener("click",(e)=>{
   if(e.target.id==='modal') closeModal();
 });
 
+// Lazy load
 function initLazyLoad(){
   const images = document.querySelectorAll('.grid img');
-  const videos = document.querySelectorAll('.grid video');
   const observer = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
       if(entry.isIntersecting){
         const el = entry.target;
-        if(el.tagName==="IMG") el.src=el.dataset.src;
-        if(el.tagName==="VIDEO") el.src=el.dataset.src;
+        el.src = el.src || el.dataset.src;
         observer.unobserve(el);
       }
     });
   }, {rootMargin:"200px"});
   images.forEach(img=>observer.observe(img));
-  videos.forEach(vid=>observer.observe(vid));
 }
 </script>
 </body>
