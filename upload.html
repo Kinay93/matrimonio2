@@ -74,40 +74,20 @@ function renderPreview() {
   });
 }
 
-function uploadWithProgress(url, file, progressElement) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const percent = (e.loaded / e.total) * 100;
-        progressElement.style.width = percent + "%";
-      }
-    };
-
-    xhr.onload = () => xhr.status === 200 ? resolve() : reject(xhr.statusText);
-    xhr.onerror = () => reject(xhr.statusText);
-
-    xhr.send(file);
-  });
-}
-
 async function uploadFiles() {
-  if(selectedFiles.length===0){ alert("Seleziona almeno un file."); return; }
-  const container=document.getElementById('progressContainer');
-  container.innerHTML="";
+  if(selectedFiles.length === 0){ alert("Seleziona almeno un file."); return; }
+  const container = document.getElementById('progressContainer');
+  container.innerHTML = "";
 
   for(const file of selectedFiles){
-    const wrapper=document.createElement("div");
-    wrapper.className="progressWrapper";
-    const label=document.createElement("div");
-    label.className="progressLabel";
-    label.textContent="Caricamento: "+file.name;
-    const bar=document.createElement("div");
-    bar.className="progressBar";
-    const progress=document.createElement("div");
+    const wrapper = document.createElement("div");
+    wrapper.className = "progressWrapper";
+    const label = document.createElement("div");
+    label.className = "progressLabel";
+    label.textContent = "Caricamento: " + file.name;
+    const bar = document.createElement("div");
+    bar.className = "progressBar";
+    const progress = document.createElement("div");
     bar.appendChild(progress);
     wrapper.appendChild(label);
     wrapper.appendChild(bar);
@@ -116,27 +96,48 @@ async function uploadFiles() {
     try{
       if(file.size < 20*1024*1024){ 
         // File piccolo -> POST diretto
-        const formData=new FormData();
-        formData.append("foto",file);
-        const res=await fetch("https://matrimoniome.appspot.com/upload", {method:"POST", body:formData});
-        const data=await res.json();
-        label.textContent="✅ Caricato: "+file.name;
-        progress.style.width="100%";
+        const formData = new FormData();
+        formData.append("foto", file);
+        const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/upload", {method:"POST", body:formData});
+        const data = await res.json();
+        label.textContent = "✅ Caricato: " + file.name;
+        progress.style.width = "100%";
       } else { 
-        // File grande -> signed URL
-        const res=await fetch("https://matrimoniome.appspot.com/generate_upload_url",{
+        // File grande -> signed URL con chunked upload
+        const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({filename:file.name, contentType:file.type})
         });
-        const {uploadUrl, publicUrl}=await res.json();
-        await uploadWithProgress(uploadUrl, file, progress);
-        label.textContent="✅ Caricato: "+file.name;
+        const {uploadUrl, publicUrl} = await res.json();
+
+        await uploadLargeFile(file, uploadUrl, progress);
+
+        label.textContent = "✅ Caricato: " + file.name;
       }
     } catch(err){
       console.error(err);
-      label.textContent="❌ Errore: "+file.name;
+      label.textContent = "❌ Errore: " + file.name;
     }
+  }
+}
+
+async function uploadLargeFile(file, uploadUrl, progressElement){
+  const chunkSize = 10 * 1024 * 1024; // 10 MB
+  let offset = 0;
+
+  while(offset < file.size){
+    const chunk = file.slice(offset, offset + chunkSize);
+    await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Range": `bytes ${offset}-${offset + chunk.size - 1}/${file.size}`,
+        "Content-Type": file.type
+      },
+      body: chunk
+    });
+    offset += chunkSize;
+    progressElement.style.width = (offset / file.size * 100) + "%";
   }
 }
 </script>
