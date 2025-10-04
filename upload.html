@@ -103,16 +103,14 @@ async function uploadFiles() {
         label.textContent = "✅ Caricato: " + file.name;
         progress.style.width = "100%";
       } else { 
-        // File grande -> signed URL con chunked upload
+        // File grande -> signed URL resumable
         const res = await fetch("https://matrimoniome-backend-963503805745.europe-west1.run.app/generate_upload_url",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({filename:file.name, contentType:file.type})
         });
         const {uploadUrl, publicUrl} = await res.json();
-
         await uploadLargeFile(file, uploadUrl, progress);
-
         label.textContent = "✅ Caricato: " + file.name;
       }
     } catch(err){
@@ -125,19 +123,19 @@ async function uploadFiles() {
 async function uploadLargeFile(file, uploadUrl, progressElement){
   const chunkSize = 10 * 1024 * 1024; // 10 MB
   let offset = 0;
-
   while(offset < file.size){
     const chunk = file.slice(offset, offset + chunkSize);
-    await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Range": `bytes ${offset}-${offset + chunk.size - 1}/${file.size}`,
-        "Content-Type": file.type
-      },
-      body: chunk
-    });
+    const end = offset + chunk.size - 1;
+    const headers = {
+      "Content-Range": `bytes ${offset}-${end}/${file.size}`,
+      "Content-Type": file.type
+    };
+    const res = await fetch(uploadUrl, {method:"PUT", headers, body:chunk});
+    if(!res.ok && res.status !== 308){
+      throw new Error(`Errore caricamento chunk: ${res.statusText}`);
+    }
     offset += chunkSize;
-    progressElement.style.width = (offset / file.size * 100) + "%";
+    progressElement.style.width = Math.min((offset / file.size)*100,100) + "%";
   }
 }
 </script>
