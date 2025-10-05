@@ -100,46 +100,54 @@ let filteredGallery = [];
 let currentIndex = 0;
 let currentFilter = "photo";
 
+// 🔗 Endpoint Cloud Run
+const ENDPOINT = `https://matrimoniome-backend-963503805745.europe-west1.run.app/gallery?coppia=${coppia}`;
+
 // Fetch galleria
-fetch(`https://matrimoniome.appspot.com/gallery?coppia=${coppia}`)
+fetch(ENDPOINT)
   .then(res => res.json())
   .then(data => {
     gallery = data;
-    filteredGallery = gallery.filter(f => f.url.includes("uploads/"));
+    // Compatibilità vecchio formato
+    gallery = gallery.map(f => ({
+      ...f,
+      type: f.type || (f.url.includes(".mp4") ? "video" : "photo"),
+      thumbUrl: f.thumbUrl || f.url
+    }));
+    filteredGallery = gallery.filter(f => f.type === "photo");
     renderGrid();
     initLazyLoad();
+  })
+  .catch(err => {
+    console.error("Errore nel caricamento galleria:", err);
+    alert("Impossibile caricare la galleria 😢");
   });
 
 // Filtri
-document.querySelectorAll(".filters button").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+document.querySelectorAll(".filters button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentFilter = btn.dataset.type;
-    if(currentFilter==="photo")
-      filteredGallery = gallery.filter(f=>f.url.includes("uploads/"));
-    else
-      filteredGallery = gallery.filter(f=>f.url.includes("/video/"));
+    filteredGallery = gallery.filter(f => f.type === currentFilter);
     renderGrid();
     initLazyLoad();
-  }
+  };
 });
 
 // Creazione griglia
-function createGridItem(file,index){
+function createGridItem(file, index) {
   const wrapper = document.createElement('div');
   wrapper.className = "grid-item";
   wrapper.dataset.index = index;
 
-  if(currentFilter==="video"){
-    const img = document.createElement('img');
-    img.src = file.thumbUrl;
-    wrapper.appendChild(img);
-    wrapper.onclick = ()=> window.open(`https://matrimoniome-backend-963503805745.europe-west1.run.app/video/${file.name}`, "_blank");
+  const img = document.createElement('img');
+  img.src = file.thumbUrl || file.url;
+  wrapper.appendChild(img);
+
+  if (file.type === "video") {
+    wrapper.onclick = () => openModal(index);
   } else {
-    const img = document.createElement('img');
-    img.src = file.url;
-    wrapper.appendChild(img);
     wrapper.onclick = () => openModal(index);
   }
 
@@ -147,34 +155,31 @@ function createGridItem(file,index){
 }
 
 // Render griglia
-function renderGrid(){
+function renderGrid() {
   const grid = document.getElementById('photoGrid');
   grid.innerHTML = '';
-  filteredGallery.forEach((file,index)=>{
-    const item = createGridItem(file,index);
+  filteredGallery.forEach((file, index) => {
+    const item = createGridItem(file, index);
     grid.appendChild(item);
   });
 }
 
-// Modal per foto
-function openModal(index){
+// Modal per foto/video
+function openModal(index) {
   currentIndex = index;
   showMedia();
-  document.getElementById('modal').style.display='flex';
+  document.getElementById('modal').style.display = 'flex';
 }
-function closeModal(){
-  document.getElementById('modal').style.display='none';
-  document.getElementById('modalContent').innerHTML='';
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  document.getElementById('modalContent').innerHTML = '';
 }
-function showMedia(){
+function showMedia() {
   const modalContent = document.getElementById('modalContent');
-  modalContent.innerHTML='';
+  modalContent.innerHTML = '';
   const file = filteredGallery[currentIndex];
 
-  const vidExts = ["mp4","webm","ogg"];
-  const ext = file.name.split('.').pop().toLowerCase();
-
-  if(vidExts.includes(ext)){
+  if (file.type === "video") {
     const vid = document.createElement('video');
     vid.src = file.url;
     vid.controls = true;
@@ -190,59 +195,64 @@ function showMedia(){
 }
 
 // Preload successivo/precedente
-function preloadNeighbors(){
-  const nextIndex = (currentIndex+1)%filteredGallery.length;
-  const prevIndex = (currentIndex-1+filteredGallery.length)%filteredGallery.length;
-  [nextIndex,prevIndex].forEach(i=>{
+function preloadNeighbors() {
+  const nextIndex = (currentIndex + 1) % filteredGallery.length;
+  const prevIndex = (currentIndex - 1 + filteredGallery.length) % filteredGallery.length;
+  [nextIndex, prevIndex].forEach(i => {
     const file = filteredGallery[i];
-    const ext = file.name.split('.').pop().toLowerCase();
-    if(["mp4","webm","ogg"].includes(ext)){
-      const vid=document.createElement('video'); vid.src=file.url; vid.preload="metadata";
+    if (file.type === "video") {
+      const vid = document.createElement('video');
+      vid.src = file.url;
+      vid.preload = "metadata";
     } else {
-      const img=new Image(); img.src=file.url;
+      const img = new Image();
+      img.src = file.url;
     }
   });
 }
 
-// Controlli tastiera
-document.addEventListener("keydown",(e)=>{
-  if(document.getElementById('modal').style.display==='flex'){
-    if(e.key==="ArrowRight") nextMedia();
-    if(e.key==="ArrowLeft") prevMedia();
-    if(e.key==="Escape") closeModal();
-  }
-});
+// Navigazione
 document.getElementById("next").onclick = nextMedia;
 document.getElementById("prev").onclick = prevMedia;
 document.getElementById("close").onclick = closeModal;
-function nextMedia(){ currentIndex=(currentIndex+1)%filteredGallery.length; showMedia(); }
-function prevMedia(){ currentIndex=(currentIndex-1+filteredGallery.length)%filteredGallery.length; showMedia(); }
 
-// Swipe mobile
-let startX = 0;
-document.getElementById('modal').addEventListener("touchstart",(e)=>{ startX=e.touches[0].clientX; });
-document.getElementById('modal').addEventListener("touchend",(e)=>{
-  let endX=e.changedTouches[0].clientX;
-  if(endX-startX>50) prevMedia();
-  if(startX-endX>50) nextMedia();
+function nextMedia() {
+  currentIndex = (currentIndex + 1) % filteredGallery.length;
+  showMedia();
+}
+function prevMedia() {
+  currentIndex = (currentIndex - 1 + filteredGallery.length) % filteredGallery.length;
+  showMedia();
+}
+
+// Tastiera e swipe
+document.addEventListener("keydown", (e) => {
+  if (document.getElementById('modal').style.display === 'flex') {
+    if (e.key === "ArrowRight") nextMedia();
+    if (e.key === "ArrowLeft") prevMedia();
+    if (e.key === "Escape") closeModal();
+  }
 });
-document.getElementById('modal').addEventListener("click",(e)=>{
-  if(e.target.id==='modal') closeModal();
+let startX = 0;
+document.getElementById('modal').addEventListener("touchstart", e => startX = e.touches[0].clientX);
+document.getElementById('modal').addEventListener("touchend", e => {
+  let endX = e.changedTouches[0].clientX;
+  if (endX - startX > 50) prevMedia();
+  if (startX - endX > 50) nextMedia();
+});
+document.getElementById('modal').addEventListener("click", e => {
+  if (e.target.id === 'modal') closeModal();
 });
 
 // Lazy load
-function initLazyLoad(){
+function initLazyLoad() {
   const images = document.querySelectorAll('.grid img');
-  const observer = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){
-        const el = entry.target;
-        el.src = el.src || el.dataset.src;
-        observer.unobserve(el);
-      }
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) observer.unobserve(entry.target);
     });
-  }, {rootMargin:"200px"});
-  images.forEach(img=>observer.observe(img));
+  }, { rootMargin: "200px" });
+  images.forEach(img => observer.observe(img));
 }
 </script>
 </body>
