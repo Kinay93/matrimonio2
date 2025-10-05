@@ -108,11 +108,11 @@ fetch(ENDPOINT)
   .then(res => res.json())
   .then(data => {
     gallery = data;
-    // Compatibilità vecchio formato
+    // Compatibilità vecchio formato e thumbnail video
     gallery = gallery.map(f => ({
       ...f,
-      type: f.type || (f.url.includes(".mp4") ? "video" : "photo"),
-      thumbUrl: f.thumbUrl || f.url
+      type: f.type || (f.url.endsWith(".mp4") ? "video" : "photo"),
+      thumbUrl: f.thumbUrl || (f.url.endsWith(".mp4") ? `https://storage.googleapis.com/matrimonio_bucket/thumbnails/${f.name}.jpg` : f.url)
     }));
     filteredGallery = gallery.filter(f => f.type === "photo");
     renderGrid();
@@ -142,14 +142,10 @@ function createGridItem(file, index) {
   wrapper.dataset.index = index;
 
   const img = document.createElement('img');
-  img.src = file.thumbUrl || file.url;
+  img.src = file.thumbUrl || file.url; // usa thumbUrl per video
   wrapper.appendChild(img);
 
-  if (file.type === "video") {
-    wrapper.onclick = () => openModal(index);
-  } else {
-    wrapper.onclick = () => openModal(index);
-  }
+  wrapper.onclick = () => openModal(index); // sia foto che video aprono il modal
 
   return wrapper;
 }
